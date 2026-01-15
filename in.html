@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login Bear</title>
+  <style>
+    :root{
+      --bg:#f3f6fb;
+      --card:#ffffff;
+      --stroke:#2d8dbb;
+      --frame:#bfe6f5;
+      --primary:#2f97c5;
+
+      /* JS sẽ set các biến này */
+      --lookX: 0px;     /* pupil move x */
+      --lookY: 0px;     /* pupil move y */
+      --headRot: 0deg;  /* head rotate */
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:#163244;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+
+    .card{
+      width:min(420px, 92vw);
+      background:var(--card);
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:18px;
+      padding:26px 22px 22px;
+      box-shadow:0 18px 50px rgba(15, 62, 86, 0.12);
+    }
+
+    .title{
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:.2px;
+      text-align:center;
+      margin:0 0 16px;
+      color:#0f3e56;
+    }
+
+    /* ---------- Mascot ---------- */
+    .mascot{
+      width:190px;
+      height:190px;
+      margin:10px auto 20px;
+      position:relative;
+      display:grid;
+      place-items:center;
+    }
+
+    .mascot .frame{
+      width:180px;
+      height:180px;
+      border-radius:999px;
+      overflow:hidden;
+      position:relative;
+      display:grid;
+      place-items:center;
+    }
+
+    .mascot svg{
+      width:180px;
+      height:180px;
+      display:block;
+    }
+
+    /* Head group rotates a bit */
+    .yeti{
+      transform-origin: 50% 50%;
+      transform-box: fill-box;
+      transform: rotate(var(--headRot));
+      transition: transform 180ms ease;
+    }
+
+    /* Pupils move */
+    .pupil{
+      transform: translate(var(--lookX), var(--lookY));
+      transition: transform 60ms linear;
+    }
+
+    /* Hands overlay (HTML div) */
+    .hand{
+      position:absolute;
+      width:62px;
+      height:44px;
+      border-radius:999px;
+      background:#fff;
+      border:4px solid var(--stroke);
+      top:118px; /* resting position */
+      z-index:5;
+      box-shadow: 0 6px 0 rgba(45,141,187,.10);
+      transition: transform 320ms cubic-bezier(.2,.9,.2,1);
+    }
+
+    .hand::after{
+      content:"";
+      position:absolute;
+      width:18px;
+      height:70px;
+      background:#fff;
+      border:4px solid var(--stroke);
+      border-radius:999px;
+      top:18px;
+      left:20px;
+      box-shadow: 0 6px 0 rgba(45,141,187,.06);
+    }
+
+    .hand--left{ left:18px; transform: translateY(30px) rotate(-10deg); }
+    .hand--right{ right:18px; transform: translateY(30px) rotate(10deg); }
+
+    /* Cover eyes when password focus */
+    .mascot.hands-up .hand--left{ transform: translateY(-42px) rotate(-18deg); }
+    .mascot.hands-up .hand--right{ transform: translateY(-42px) rotate(18deg); }
+
+    /* Peek one eye when show password checked */
+    .mascot.peek .hand--left{ transform: translateY(-42px) rotate(-18deg); }
+    .mascot.peek .hand--right{ transform: translateY(-18px) translateX(10px) rotate(24deg); }
+
+    /* Optional: when hands-up, reduce pupil motion slightly */
+    .mascot.hands-up .pupil{
+      transition: transform 0ms linear;
+      transform: translate(0px, 0px);
+    }
+
+    /* ---------- Form ---------- */
+    .field{
+      margin:0 0 14px;
+    }
+    label{
+      display:block;
+      font-weight:700;
+      margin:0 0 8px;
+      color:#226a86;
+      letter-spacing:.2px;
+    }
+
+    .input{
+      width:100%;
+      height:46px;
+      border-radius:10px;
+      border:2px solid #d2e5f0;
+      outline:none;
+      padding:0 12px;
+      font-size:16px;
+      transition: border-color .15s ease, box-shadow .15s ease;
+      background:#fff;
+      color:#0f3e56;
+    }
+    .input:focus{
+      border-color:#74c3e3;
+      box-shadow:0 0 0 4px rgba(116,195,227,.25);
+    }
+
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin:2px 0 8px;
+    }
+    .show{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:700;
+      color:#3b88a6;
+      user-select:none;
+      white-space:nowrap;
+      font-size:14px;
+    }
+    .show input{ width:16px; height:16px; }
+
+    button{
+      width:100%;
+      height:48px;
+      border:none;
+      border-radius:12px;
+      background: linear-gradient(180deg, #43add7, #2a93c0);
+      color:#fff;
+      font-weight:800;
+      font-size:16px;
+      letter-spacing:.4px;
+      cursor:pointer;
+      margin-top:10px;
+      box-shadow:0 14px 26px rgba(45,141,187,.20);
+      transition: transform .08s ease;
+    }
+    button:active{ transform: translateY(1px); }
+
+    .hint{
+      margin:12px 0 0;
+      font-size:13px;
+      color:#4a7386;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1 class="title">Trang đăng nhập</h1>
+
+    <div class="mascot" id="mascot">
+      <div class="frame">
+        <!-- Mascot SVG -->
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <!-- circle frame -->
+          <circle cx="100" cy="100" r="90" fill="var(--frame)" stroke="var(--stroke)" stroke-width="6"/>
+
+          <!-- yeti group (rotates a bit) -->
+          <g class="yeti">
+            <!-- body -->
+            <path d="M50 155
+                     C50 130, 60 105, 75 95
+                     C82 70, 95 58, 100 58
+                     C105 58, 118 70, 125 95
+                     C140 105, 150 130, 150 155"
+                  fill="#ffffff" stroke="var(--stroke)" stroke-width="5" stroke-linecap="round" />
+
+            <!-- hair -->
+            <path d="M74 72
+                     C82 62, 92 60, 100 60
+                     C108 60, 118 62, 126 72
+                     C120 70, 116 74, 112 73
+                     C108 72, 104 75, 100 73
+                     C96 75, 92 72, 88 73
+                     C84 74, 80 70, 74 72"
+                  fill="#ffffff" stroke="var(--stroke)" stroke-width="5" stroke-linejoin="round"/>
+
+            <!-- ears -->
+            <path d="M63 92 C54 88, 54 78, 62 74" fill="none" stroke="var(--stroke)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M137 92 C146 88, 146 78, 138 74" fill="none" stroke="var(--stroke)" stroke-width="5" stroke-linecap="round"/>
+
+            <!-- eyes -->
+            <circle cx="82" cy="102" r="14" fill="#ffffff" stroke="var(--stroke)" stroke-width="4"/>
+            <circle cx="118" cy="102" r="14" fill="#ffffff" stroke="var(--stroke)" stroke-width="4"/>
+
+            <!-- pupils (move by CSS vars) -->
+            <circle class="pupil pupil--left"  cx="82"  cy="106" r="5.7" fill="#0f3e56"/>
+            <circle class="pupil pupil--right" cx="118" cy="106" r="5.7" fill="#0f3e56"/>
+
+            <!-- mouth -->
+            <path d="M92 123
+                     C96 130, 104 130, 108 123
+                     C105 120, 95 120, 92 123 Z"
+                  fill="#e4515d" stroke="var(--stroke)" stroke-width="4" stroke-linejoin="round"/>
+          </g>
+        </svg>
+
+        <!-- hands overlay -->
+        <div class="hand hand--left" aria-hidden="true"></div>
+        <div class="hand hand--right" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <form autocomplete="off" onsubmit="return false;">
+      <div class="field">
+        <label for="email">Email / Tài khoản</label>
+        <input class="input" id="email" type="text" inputmode="email" placeholder="juno_okyo@example.com" />
+      </div>
+
+      <div class="row">
+        <label for="password" style="margin:0;">Mật khẩu</label>
+        <label class="show" title="Hiện mật khẩu">
+          <input id="show" type="checkbox" />
+          Hiện
+        </label>
+      </div>
+
+      <div class="field">
+        <input class="input" id="password" type="password" placeholder="••••••••" />
+      </div>
+
+      <button type="button">Đăng nhập</button>
+      <p class="hint">Demo HTML/CSS/JS (không gửi dữ liệu)</p>
+    </form>
+  </div>
+
+  <script>
+    const mascot = document.getElementById('mascot');
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const showEl = document.getElementById('show');
+
+    // canvas đo độ rộng text để biết caret đang ở đâu
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+    function setLook(lookXpx, lookYpx, headDeg){
+      document.documentElement.style.setProperty('--lookX', `${lookXpx}px`);
+      document.documentElement.style.setProperty('--lookY', `${lookYpx}px`);
+      document.documentElement.style.setProperty('--headRot', `${headDeg}deg`);
+    }
+
+    function resetLook(){
+      setLook(0, 0, 0);
+    }
+
+    function measureTextWidth(input, text){
+      const s = getComputedStyle(input);
+      ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+      return ctx.measureText(text).width;
+    }
+
+    function updateLookFromCaret(){
+      // Nếu đang ở password mode thì thôi (tay che mắt)
+      if (mascot.classList.contains('hands-up')) return;
+
+      const value = emailEl.value || "";
+      const caret = (typeof emailEl.selectionStart === 'number') ? emailEl.selectionStart : value.length;
+
+      const before = value.slice(0, caret);
+      const textW = measureTextWidth(emailEl, before);
+
+      const s = getComputedStyle(emailEl);
+      const padL = parseFloat(s.paddingLeft) || 0;
+      const padR = parseFloat(s.paddingRight) || 0;
+      const contentW = emailEl.clientWidth - padL - padR;
+
+      // caretX bên trong input (xấp xỉ), trừ scrollLeft khi text dài
+      let caretX = padL + textW - (emailEl.scrollLeft || 0);
+      caretX = clamp(caretX, padL, padL + contentW);
+
+      // normalize -1..1 (0 là giữa)
+      const center = padL + contentW / 2;
+      const norm = clamp((caretX - center) / (contentW / 2), -1, 1);
+
+      // map sang chuyển động mắt và quay đầu
+      const lookX = norm * 6;      // px
+      const lookY = -1;            // hơi nhìn lên 1 tí
+      const head = norm * 8;       // deg
+
+      setLook(lookX, lookY, head);
+    }
+
+    function setPasswordState(){
+      const focused = document.activeElement === passEl;
+      const show = showEl.checked;
+
+      if (focused){
+        mascot.classList.add('hands-up');
+        if (show){
+          mascot.classList.add('peek');
+          passEl.type = 'text';
+        } else {
+          mascot.classList.remove('peek');
+          passEl.type = 'password';
+        }
+        resetLook();
+      } else {
+        mascot.classList.remove('hands-up');
+        mascot.classList.remove('peek');
+        // type vẫn theo checkbox
+        passEl.type = show ? 'text' : 'password';
+      }
+    }
+
+    function setEmailState(){
+      const focused = document.activeElement === emailEl;
+      if (focused){
+        // bỏ trạng thái password
+        mascot.classList.remove('hands-up','peek');
+        updateLookFromCaret();
+      } else {
+        resetLook();
+      }
+    }
+
+    // --- Email events ---
+    ['input','keyup','click','mouseup','focus'].forEach(evt=>{
+      emailEl.addEventListener(evt, () => {
+        // chỉ update khi email đang focus
+        if (document.activeElement === emailEl){
+          mascot.classList.remove('hands-up','peek');
+          updateLookFromCaret();
+        }
+      });
+    });
+
+    emailEl.addEventListener('blur', () => {
+      // nếu không nhảy sang password thì reset
+      setTimeout(() => {
+        if (document.activeElement !== passEl) resetLook();
+      }, 0);
+    });
+
+    // --- Password events ---
+    passEl.addEventListener('focus', setPasswordState);
+    passEl.addEventListener('blur', () => {
+      setTimeout(() => {
+        setPasswordState();
+        // nếu quay lại email thì update look
+        if (document.activeElement === emailEl) updateLookFromCaret();
+      }, 0);
+    });
+
+    // --- Show checkbox ---
+    showEl.addEventListener('change', () => {
+      setPasswordState();
+    });
+
+    // init
+    resetLook();
+  </script>
+</body>
+</html>
